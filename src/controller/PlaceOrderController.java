@@ -3,156 +3,172 @@ package controller;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import entity.cart.Cart;
 import entity.cart.CartMedia;
-import common.exception.InvalidDeliveryInfoException;
 import entity.invoice.Invoice;
 import entity.order.Order;
 import entity.order.OrderMedia;
-import views.screen.popup.PopupScreen;
 
 /**
  * This class controls the flow of place order usecase in our AIMS project
- * 
  * @author nguyenlm
  */
-public class PlaceOrderController extends BaseController {
+public class PlaceOrderController extends BaseController{
 
-	/**
-	 * Just for logging purpose
-	 */
-	private static Logger LOGGER = utils.Utils.getLogger(PlaceOrderController.class.getName());
+    /**
+     * For reduce hard code
+     */
+    public static final String ADDRESS = "address";
+    public static final String PHONE_NUMBER = "phone";
+    public static final String NAME = "name";
 
-	/**
-	 * This method checks the avalibility of product when user click PlaceOrder
-	 * button
-	 * 
-	 * @throws SQLException
-	 */
-	public void placeOrder() throws SQLException {
-		Cart.getCart().checkAvailabilityOfProduct();
-	}
+    private ShippingFeeCalculator calculateShippingFee;
 
-	/**
-	 * This method creates the new Order based on the Cart
-	 * 
-	 * @return Order
-	 * @throws SQLException
-	 */
-	public Order createOrder() throws SQLException {
-		Order order = new Order();
-		for (Object object : Cart.getCart().getListMedia()) {
-			CartMedia cartMedia = (CartMedia) object;
-			OrderMedia orderMedia = new OrderMedia(cartMedia.getMedia(), cartMedia.getQuantity(), cartMedia.getPrice());
-			order.getlstOrderMedia().add(orderMedia);
-		}
-		return order;
-	}
+    public PlaceOrderController() {
+    }
 
-	/**
-	 * This method creates the new Invoice based on order
-	 * 
-	 * @param order
-	 * @return Invoice
-	 */
-	public Invoice createInvoice(Order order) {
-		return new Invoice(order);
-	}
+    public PlaceOrderController(ShippingFeeCalculator calculateShippingFee) {
+        this.calculateShippingFee = calculateShippingFee;
+    }
 
-	/**
-	 * This method takes responsibility for processing the shipping info from user
-	 * 
-	 * @param info
-	 * @throws InterruptedException
-	 * @throws IOException
-	 */
-	public void processDeliveryInfo(HashMap info) throws InterruptedException, IOException {
-		LOGGER.info("Process Delivery Info");
-		LOGGER.info(info.toString());
-		validateDeliveryInfo(info);
-	}
+    /**
+     * Just for logging purpose
+     */
+    private static Logger LOGGER = utils.Utils.getLogger(PlaceOrderController.class.getName());
 
-	/**
-	 * The method validates the info
-	 * 
-	 * @param info
-	 * @throws InterruptedException
-	 * @throws IOException
-	 */
-	public void validateDeliveryInfo(HashMap<String, String> info) throws InterruptedException, IOException {
+    /**
+     * This method checks the availability of product when user click PlaceOrder button
+     * @throws SQLException
+     */
+    public void placeOrder() throws SQLException{
+        Cart.getCart().checkAvailabilityOfProduct();
+    }
 
-	}
-	/**
-	 * Method validate phone number
-	 * @author Ngo The Tan 20183980
-	 * @param phoneNumber
-	 * @return true/false
-	 */
-	public boolean validatePhoneNumber(String phoneNumber) {
-		// Ngo The Tan 20183980
-		// check phone (10 length, start with '0'
-		if (phoneNumber.length() != 10 || phoneNumber == null || phoneNumber.charAt(0) != '0')
-			return false;
-		// check the phonenumber contain only number
-		try {
-			Integer.parseInt(phoneNumber);
+    /**
+     * This method creates the new Order based on the Cart
+     * @return Order
+     * @throws SQLException
+     */
+    public Order createOrder() throws SQLException{
+        Order order = new Order();
+        for (Object object : Cart.getCart().getListMedia()) {
+            CartMedia cartMedia = (CartMedia) object;
+            OrderMedia orderMedia = new OrderMedia(cartMedia.getMedia(), 
+                                                   cartMedia.getQuantity(), 
+                                                   cartMedia.getPrice());    
+            order.getlstOrderMedia().add(orderMedia);
+        }
+        return order;
+    }
 
-		} catch (NumberFormatException e) {
-			return false;
-		}
-		return true;
-	}
-	/**
-	 * Method validate name
-	 * @author Ngo The Tan 20183980
-	 * @param name
-	 * @return true/false
-	 */
-	public boolean validateName(String name) {
-		// Ngo The Tan - 20183980
-		if (name == null)
-			return false;
-		Pattern p = Pattern.compile("[^A-Za-z]", Pattern.CASE_INSENSITIVE);
-		Matcher m = p.matcher(name.trim().replaceAll("\\s",""));
-		boolean b = m.find();
-		if (b)
-			return false;
-		return true;
-	}
-	/**
-	 * Method validate address
-	 * @author Ngo The Tan 20183980
-	 * @param address
-	 * @return true/false
-	 */
-	public boolean validateAddress(String address) {
-		// Ngo The Tan - 20183980
-		if (address == null)
-			return false;
-		Pattern p = Pattern.compile("[^A-Za-z0-9]", Pattern.CASE_INSENSITIVE);
-		Matcher m = p.matcher(address.trim().replaceAll("\\s",""));
-		boolean b = m.find();
-		if (b)
-			return false;
-		return true;
-	}
+    /**
+     * This method creates the new Invoice based on order
+     * @param order
+     * @return Invoice
+     */
+    public Invoice createInvoice(Order order) {
+        return new Invoice(order);
+    }
 
-	/**
-	 * This method calculates the shipping fees of order
-	 * 
-	 * @param order
-	 * @return shippingFee
-	 */
-	public int calculateShippingFee(Order order) {
-		Random rand = new Random();
-		int fees = (int) (((rand.nextFloat() * 10) / 100) * order.getAmount());
-		LOGGER.info("Order Amount: " + order.getAmount() + " -- Shipping Fees: " + fees);
-		return fees;
-	}
+    /**
+     * This method takes responsibility for processing the shipping info from user
+     * @param info
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    public void processDeliveryInfo(HashMap info) throws InterruptedException, IOException{
+        LOGGER.info("Process Delivery Info");
+        LOGGER.info(info.toString());
+        validateDeliveryInfo(info);
+    }
+    
+    /**
+   * The method validates the info
+   * @param info
+   * @throws InterruptedException
+   * @throws IOException
+   */
+    public boolean validateDeliveryInfo(HashMap<String, String> info) throws InterruptedException, IOException{
+        String address = info.get(ADDRESS);
+        String name = info.get(NAME);
+        String phoneNumber = info.get(PHONE_NUMBER);
+        return validateAddress(address) && validateName(name) && validatePhoneNumber(phoneNumber);
+    }
+
+    /**
+     * The method validates the phone number of user
+     * @param phoneNumber
+     */
+    public boolean validatePhoneNumber(String phoneNumber) {
+        // TanNT -20183980
+        if (phoneNumber == null || phoneNumber.isEmpty() || phoneNumber.charAt(0) != '0' || phoneNumber.length() != 10) {
+            return false;
+        }
+
+        boolean isValid = true;
+        for (char ch : phoneNumber.toCharArray()) {
+            if ( !Character.isDigit(ch) ) {
+                isValid = false;
+                break;
+            }
+        }
+
+        return isValid;
+    }
+
+    /**
+     * The method validates name of user
+     * @param name User's name
+     */
+    public boolean validateName(String name) {
+        // TanNT -20183980
+        if (name == null || name.isEmpty()) {
+            return false;
+        }
+
+        boolean isValid = true;
+        for (char ch : name.toCharArray()) {
+            if ( !Character.isLetter(ch) ) {
+                isValid = false;
+            }
+        }
+
+        return isValid;
+    }
+
+    /**
+     * The method validates user's address
+     * @param address
+     */
+    public boolean validateAddress(String address) {
+        // TanNT -20183980
+        if (address == null || address.isEmpty()) {
+            return false;
+        }
+
+        boolean isValid = true;
+        for (char ch : address.toCharArray()) {
+            if ( ch == ' ' ) {
+                continue;
+            }
+            if ( !Character.isLetter(ch) ) {
+                isValid = false;
+                break;
+            }
+        }
+
+        return isValid;
+    }
+    
+
+    /**
+     * This method calculates the shipping fees of order
+     * @param order
+     * @return shippingFee
+     */
+    public int calculateShippingFee(Order order){
+        return calculateShippingFee.calculateShippingFee(order);
+    }
 }

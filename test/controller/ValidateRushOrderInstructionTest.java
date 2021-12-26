@@ -9,7 +9,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 /**
  * @author TanNT -20183980
  */
-public class ValidateReceiveTimeTest {
+public class ValidateRushOrderInstructionTest {
 
     private PlaceRushOrderController placeRushOrderController;
 
@@ -20,15 +20,13 @@ public class ValidateReceiveTimeTest {
 
     @ParameterizedTest
     @CsvSource({
-            "08-08-2020 14:00,true",
-            "08/08/2020 14:00,false",
-            "08/13/2020 14:00,false",
-            "08-08/2020 14:00,false",
-            "08-08-2020 25:00,false",
-            "33-08-2020 14:00,false"
+            "Den dung gio vi toi co hen,true",
+            "123,false",
+            "Di vao ngo thu ba roi re trai,true",
+            "@123,false"
     })
-    void test(String time, boolean expected) {
-        boolean isValid = placeRushOrderController.validateReceiveTime(time);
+    void test(String instruction, boolean expected) {
+        boolean isValid = placeRushOrderController.validateRushOrderInstruction(instruction);
         Assertions.assertEquals(isValid, expected);
     }
 }
